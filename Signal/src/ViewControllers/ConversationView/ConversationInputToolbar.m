@@ -31,6 +31,8 @@ static void *kConversationInputTextViewObservingContext = &kConversationInputTex
 
 @property (nonatomic) NSArray<NSLayoutConstraint *> *contentContraints;
 @property (nonatomic) NSValue *lastTextContentSize;
+@property (nonatomic) CGFloat toolbarHeight;
+@property (nonatomic) CGFloat textViewHeight;
 
 #pragma mark - Voice Memo Recording UI
 
@@ -69,11 +71,32 @@ static void *kConversationInputTextViewObservingContext = &kConversationInputTex
     [self removeKVOObservers];
 }
 
+- (CGSize)intrinsicContentSize
+{
+    CGSize newSize = CGSizeMake(self.bounds.size.width, self.toolbarHeight);
+    DDLogVerbose(@"%@ intrinsicContentSize: %@", self.logTag, NSStringFromCGSize(newSize));
+    return newSize;
+    //    // Calculate intrinsicContentSize that will fit all the text
+    //    let textSize = textView.sizeThatFits(CGSize(width: textView.bounds.width, height:
+    //    CGFloat.greatestFiniteMagnitude)) return CGSize(width: bounds.width, height: textSize.height)
+}
+
+
+- (void)setToolbarHeight:(CGFloat)toolbarHeight
+{
+    if (toolbarHeight == _toolbarHeight) {
+        return;
+    }
+
+    _toolbarHeight = toolbarHeight;
+    [self.inputToolbarDelegate toolbarHeightDidChange:toolbarHeight];
+}
 - (void)createContents
 {
     self.layoutMargins = UIEdgeInsetsZero;
 
     self.backgroundColor = [UIColor ows_inputToolbarBackgroundColor];
+    self.autoresizingMask = UIViewAutoresizingFlexibleHeight;
 
     UIView *borderView = [UIView new];
     borderView.backgroundColor = [UIColor colorWithWhite:238 / 255.f alpha:1.f];
@@ -229,6 +252,9 @@ static void *kConversationInputTextViewObservingContext = &kConversationInputTex
     const CGFloat textViewHeight = ceil(Clamp(textViewDesiredHeight, kMinTextViewHeight, kMaxTextViewHeight));
     const CGFloat kMinContentHeight = kMinTextViewHeight + textViewVInset * 2;
 
+    self.textViewHeight = textViewHeight;
+    self.toolbarHeight = textViewHeight + textViewVInset * 2;
+
     if (self.attachmentToApprove) {
         OWSAssert(self.attachmentView);
 
@@ -314,6 +340,8 @@ static void *kConversationInputTextViewObservingContext = &kConversationInputTex
     // Additionally, we use "wrapper" views around the leading and trailing
     // buttons to expand their hot area.
     self.contentContraints = @[
+        //        [self autoSetDimension:ALDimensionHeight toSize:kMinContentHeight],
+        //        [self autoSetDimension:ALDimensionHeight toSize:toolbarHeight],
         [self.leftButtonWrapper autoPinEdgeToSuperviewEdge:ALEdgeLeft],
         [self.leftButtonWrapper autoPinEdgeToSuperviewEdge:ALEdgeTop],
         [self.leftButtonWrapper autoPinEdgeToSuperviewEdge:ALEdgeBottom],
@@ -340,9 +368,9 @@ static void *kConversationInputTextViewObservingContext = &kConversationInputTex
     ];
 
     // Layout immediately, unless the input toolbar hasn't even been laid out yet.
-    if (self.bounds.size.width > 0 && self.bounds.size.height > 0) {
-        [self layoutIfNeeded];
-    }
+    //    if (self.bounds.size.width > 0 && self.bounds.size.height > 0) {
+    [self layoutIfNeeded];
+    //    }h
 }
 
 - (void)ensureShouldShowVoiceMemoButton
@@ -598,6 +626,26 @@ static void *kConversationInputTextViewObservingContext = &kConversationInputTex
     }
 }
 
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    //
+    //    CGRect newFrame = CGRectMake(0, 0, self.frame.size.width, self.toolbarHeight);
+    //    self.frame = newFrame;
+    //    self.contentView.frame = newFrame;
+    //
+    //    CGRect oldTVFrame = self.inputTextView.frame;
+    ////    CGRect newTextViewFrame = CGRectMake(0, 0, oldTVFrame.size.width, self.textViewHeight);
+    //    self.inputTextView.frame.height = CGRectMake(0, 0, oldTVFrame.size.width, self.textViewHeight);
+    //    self.inputTextView.bounds = CGRectMake(0, 0, oldTVFrame.size.width, self.textViewHeight);
+
+    DDLogVerbose(@"%@ layoutSubviews. self: %@ contentView: %@, inputTextView: %@",
+        self.logTag,
+        NSStringFromCGRect(self.frame),
+        NSStringFromCGRect(self.contentView.frame),
+        NSStringFromCGRect(self.inputTextView.frame));
+}
+
 - (void)setVoiceMemoUICancelAlpha:(CGFloat)cancelAlpha
 {
     OWSAssertIsOnMainThread();
@@ -709,6 +757,7 @@ static void *kConversationInputTextViewObservingContext = &kConversationInputTex
             if (!lastTextContentSize || fabs(lastTextContentSize.CGSizeValue.width - textContentSize.width) > 0.1f
                 || fabs(lastTextContentSize.CGSizeValue.height - textContentSize.height) > 0.1f) {
                 [self ensureContentConstraints];
+                [self invalidateIntrinsicContentSize];
             }
         }
     }
@@ -812,7 +861,7 @@ static void *kConversationInputTextViewObservingContext = &kConversationInputTex
 {
     [self.attachmentView viewWillDisappear:animated];
 
-    [self endEditingTextMessage];
+    //    [self endEditingTextMessage];
 }
 
 - (nullable NSString *)textInputPrimaryLanguage

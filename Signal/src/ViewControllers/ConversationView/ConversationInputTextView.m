@@ -183,7 +183,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)textViewDidEndEditing:(UITextView *)textView
 {
-    [textView resignFirstResponder];
+    //    [textView resignFirstResponder];
 }
 
 #pragma mark - Key Commands
